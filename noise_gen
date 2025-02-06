@@ -1,0 +1,36 @@
+import numpy as np
+from scipy import ndimage
+
+steps = 20
+reg_coef = 5
+
+def mask_data_V2_1(image,steps,reg_coef, uint):
+    
+    max_val = image.max()
+    noise_map = np.zeros(image.shape)
+
+    for step in range(0,steps):
+    #Create mask
+        upper =(max_val/steps)*(step+1)
+        lower =(max_val/steps)*(step)
+                    
+        temp_im = np.where(image <= lower, 0, image)
+        temp_im = np.where(image > upper, 0, temp_im)
+                    
+        temp_im_nan = np.where(temp_im == 0, np.nan, temp_im)
+        
+        mask_mean = np.nanmean(temp_im_nan)
+                    
+        #Generate noise
+        temp_noise = reg_coef * mask_mean * np.random.random(image.shape)
+        temp_noise = ndimage.gaussian_filter(temp_noise, sigma = 1)
+        temp_noise = np.where(temp_im == 0, 0, temp_noise)
+                    
+        noise_map = temp_noise+noise_map
+        
+    
+    image_noised = (image + noise_map)
+    image_noised[image_noised > max_val] = max_val
+    image_noised = image_noised.astype('uint{}'.format(uint))    
+    
+    return image_noised
