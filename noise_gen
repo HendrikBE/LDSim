@@ -1,41 +1,84 @@
-'''
+
+"""
+This script is used to simulate low dose chest images during an experimental study.
+Functions:
+    mask_data_V21(image, steps, reg_coef, correction):
+        Applies a noise mask to the input image to simulate low dose chest images.
+        Parameters:
+            image (numpy.ndarray): The input image to be processed.
+            steps (int): The number of steps to divide the image intensity range.
+            reg_coef (float): The regularization coefficient for noise generation.
+            correction (float): The correction factor for noise generation.
+        Returns:
+            numpy.ndarray: The processed image with simulated low dose noise.
+"""
+
+"""
 This script is used to simulate low dose chest images during a experimental study.
 Please contact the author if you have any questions.
-'''
+
+If used or expanded upon, please cite the following paper: XXXX
+"""
 
 import numpy as np
 from scipy import ndimage
-
-def mask_data_V21(image,steps,reg_coef, correction):
-        
-        max_val = image.max()
-        noise_map = np.zeros(image.shape)
+from skimage.exposure import match_histograms
+def mask_data_V21(image, steps, reg_coef, correction):
+    """
+    Applies a noise mask to the input image to simulate low dose chest images.
     
-        for step in range(0, steps):
-            #Create mask within bounds (upper/lower)
-            upper =(max_val/steps)*(step+1)
-            lower =(max_val/steps)*(step)
-                        
-            temp_im = np.where(image <= lower, 0, image)
-            temp_im = np.where(image > upper, 0, temp_im)
-                        
-            temp_im_nan = np.where(temp_im == 0, np.nan, temp_im)
-            if np.isnan(temp_im_nan).all():
-                mask_mean = np.zeros(image.shape)
-            else:            
-                mask_mean = np.nanmean(temp_im_nan)
-                        
-            #Generate noise
+    Parameters:
+        image (numpy.ndarray): The input image to be processed.
+        steps (int): The number of steps to divide the image intensity range.
+        reg_coef (float): The regularization coefficient for noise generation.
+        correction (float): The correction factor for noise generation.
     
-            temp_noise = reg_coef * mask_mean * np.random.random(image.shape) * correction
-            temp_noise = np.where(temp_im == 0, 0, temp_noise)
-                        
-            noise_map = temp_noise+noise_map
-            
-        noise_map = (ndimage.gaussian_filter(noise_map, sigma = 1))
-                
-        image_noised = (image - noise_map)
-        image_noised = (np.where(image_noised < 0, 0, image_noised))
-        image_noised = match_histograms(image_noised, image)
+    Returns:
+        numpy.ndarray: The processed image with simulated low dose noise.
+    """
+    
+    # Get the maximum value of the image
+    max_val = image.max()
+    
+    # Initialize the noise map with zeros
+    noise_map = np.zeros(image.shape)
+    
+    # Loop through each step to create noise masks
+    for step in range(0, steps):
+        # Define the upper and lower bounds for the current step
+        upper = (max_val / steps) * (step + 1)
+        lower = (max_val / steps) * step
         
-        return image_noised
+        # Create a temporary image mask within the bounds
+        temp_im = np.where(image <= lower, 0, image)
+        temp_im = np.where(image > upper, 0, temp_im)
+        
+        # Replace zeros with NaN for mean calculation
+        temp_im_nan = np.where(temp_im == 0, np.nan, temp_im)
+        
+        # Calculate the mean of the masked image, handling all-NaN cases
+        if np.isnan(temp_im_nan).all():
+            mask_mean = np.zeros(image.shape)
+        else:
+            mask_mean = np.nanmean(temp_im_nan)
+        
+        # Generate noise based on the regularization coefficient and correction factor
+        temp_noise = reg_coef * mask_mean * np.random.random(image.shape) * correction
+        temp_noise = np.where(temp_im == 0, 0, temp_noise)
+        
+        # Add the generated noise to the noise map
+        noise_map = temp_noise + noise_map
+    
+    # Apply Gaussian filter to the noise map
+    noise_map = ndimage.gaussian_filter(noise_map, sigma=1)
+    
+    # Subtract the noise map from the original image
+    image_noised = image - noise_map
+    
+    # Ensure no negative values in the noised image
+    image_noised = np.where(image_noised < 0, 0, image_noised)
+    
+    # Match the histogram of the noised image to the original image
+    image_noised = match_histograms(image_noised, image)
+    
+    return image_noised
