@@ -1,5 +1,14 @@
 
 """
+This script is used to simulate low dose chest images during a experimental study.
+Please contact the author if you have any questions.
+
+If used or expanded upon, please cite the following paper: XXXX
+
+In order for a correct use of this script we urge any prospective users to contact the corresponding author.
+"""
+
+"""
 This script is used to simulate low dose chest images during an experimental study.
 Functions:
     mask_data_V21(image, steps, reg_coef, correction):
@@ -11,13 +20,6 @@ Functions:
             correction (float): The correction factor for noise generation.
         Returns:
             numpy.ndarray: The processed image with simulated low dose noise.
-"""
-
-"""
-This script is used to simulate low dose chest images during a experimental study.
-Please contact the author if you have any questions.
-
-If used or expanded upon, please cite the following paper: XXXX
 """
 
 import numpy as np
